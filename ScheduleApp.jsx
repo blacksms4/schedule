@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
+import ScheduleApp from './ScheduleApp'; // 파일 이름에 맞게 수정
+
+function App() {
+  return (
+    <div className="App">
+      <ScheduleApp />
+    </div>
+  );
+}
+export default App;
 
 const holidays = {
     "2026-06-06": "현충일",
