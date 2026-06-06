@@ -4,7 +4,7 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOu
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 
-// Firebase 설정이 없으면 null로 처리하여 앱이 멈추지 않게 함
+// Firebase 설정이 없으면 null로 처리
 const firebaseConfig = typeof __firebase_config !== 'undefined' 
   ? JSON.parse(__firebase_config) 
   : null;
@@ -15,8 +15,11 @@ const db = app ? getFirestore(app) : null;
 
 export default function ScheduleApp() {
     const [user, setUser] = useState(null);
-    const [players, setPlayers] = useState(['테스트1', '테스트2', '테스트3']); // 테스트용 기본 데이터
-    const [assignments, setAssignments] = useState({});
+    const [players, setPlayers] = useState(['테스트1', '테스트2', '테스트3']); 
+    const [assignments, setAssignments] = useState({
+        '2026-06-06': '테스트1',
+        '2026-06-07': '테스트2'
+    });
     const [activeTab, setActiveTab] = useState('calendar');
     const [currentYear, setCurrentYear] = useState(2026);
     const [currentMonth, setCurrentMonth] = useState(5); 
@@ -47,7 +50,10 @@ export default function ScheduleApp() {
     };
 
     const signInWithGoogle = async () => {
-        if (!auth) return;
+        if (!auth) {
+            alert('Firebase 설정이 없어 로그인을 진행할 수 없습니다.');
+            return;
+        }
         try {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
@@ -96,7 +102,7 @@ export default function ScheduleApp() {
             days.push(
                 <div key={i} className="bg-white min-h-[100px] p-2 border border-gray-200">
                     <div className="font-bold text-sm">{i}</div>
-                    <div className="text-xs text-blue-600">{assignments[dateKey] || ''}</div>
+                    <div className="text-xs text-blue-600 font-medium">{assignments[dateKey] || ''}</div>
                 </div>
             );
         }
@@ -110,30 +116,37 @@ export default function ScheduleApp() {
                     <h1 className="text-2xl font-bold">휴일 근무 관리 시스템</h1>
                     {auth ? (
                         user ? (
-                            <button onClick={signOut} className="text-sm bg-red-100 text-red-700 px-4 py-2 rounded">로그아웃</button>
+                            <button onClick={signOut} className="text-sm bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200">로그아웃</button>
                         ) : (
-                            <button onClick={signInWithGoogle} className="text-sm bg-blue-600 text-white px-4 py-2 rounded">로그인</button>
+                            <button onClick={signInWithGoogle} className="text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">로그인</button>
                         )
                     ) : (
-                        <span className="text-xs text-gray-500">Firebase 설정 미완료</span>
+                        <span className="text-xs text-gray-400 italic">설정 모드 (테스트용)</span>
                     )}
                 </header>
 
                 <nav className="flex gap-4 mb-6 border-b pb-2">
-                    <button onClick={() => setActiveTab('calendar')} className={activeTab === 'calendar' ? 'font-bold text-blue-600' : ''}>근무표</button>
-                    <button onClick={() => setActiveTab('ladder')} className={activeTab === 'ladder' ? 'font-bold text-blue-600' : ''}>명단 관리</button>
+                    <button onClick={() => setActiveTab('calendar')} className={`pb-2 ${activeTab === 'calendar' ? 'font-bold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>근무표</button>
+                    <button onClick={() => setActiveTab('ladder')} className={`pb-2 ${activeTab === 'ladder' ? 'font-bold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>명단 관리</button>
                 </nav>
 
                 {activeTab === 'calendar' ? (
-                    <div className="grid grid-cols-7 gap-2">{getCalendarDays()}</div>
+                    <div className="grid grid-cols-7 gap-2 bg-gray-100 p-2 rounded">
+                        {['일', '월', '화', '수', '목', '금', '토'].map(d => (
+                            <div key={d} className="text-center font-bold text-gray-600 py-2">{d}</div>
+                        ))}
+                        {getCalendarDays()}
+                    </div>
                 ) : (
-                    <div>
+                    <div className="p-4 border rounded">
                         <div className="flex gap-2 mb-4">
                             <input value={playerInput} onChange={(e) => setPlayerInput(e.target.value)} className="border p-2 rounded flex-grow" placeholder="이름 입력" />
                             <button onClick={() => { setPlayers([...players, playerInput]); setPlayerInput(''); }} className="bg-blue-600 text-white px-4 py-2 rounded">추가</button>
                         </div>
-                        <canvas ref={canvasRef} width={600} height={300} className="border bg-white rounded" />
-                        <button onClick={drawLadder} className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded">사다리 시작</button>
+                        <canvas ref={canvasRef} width={600} height={300} className="border bg-white rounded shadow-inner" />
+                        <div className="mt-4">
+                            <button onClick={drawLadder} className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">사다리 시작</button>
+                        </div>
                     </div>
                 )}
             </div>
