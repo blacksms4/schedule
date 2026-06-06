@@ -281,6 +281,7 @@ export default function ScheduleApp() {
     };
 
     const addPlayer = () => {
+        if (!user) return alert('로그인이 필요합니다.');
         if (playerInput.trim()) {
             setPlayers([...players, playerInput.trim()]);
             setPlayerInput('');
@@ -289,11 +290,13 @@ export default function ScheduleApp() {
     };
 
     const removePlayer = (index) => {
+        if (!user) return alert('로그인이 필요합니다.');
         setPlayers(players.filter((_, i) => i !== index));
         saveUserData();
     };
 
     const drawLadder = () => {
+        if (!user) return alert('로그인이 필요합니다.');
         if (players.length < 2) return alert("최소 2명이 필요합니다.");
         const canvas = canvasRef.current;
         if (!canvas) {
@@ -384,6 +387,7 @@ export default function ScheduleApp() {
     };
 
     const editAssignment = (dateKey) => {
+        if (!user) return alert('로그인이 필요합니다.');
         const currentValue = assignments[dateKey] || '';
         const newValue = prompt(`${dateKey} 근무자 수정 (여러명은 쉼표로 구분):`, currentValue);
         if (newValue !== null) {
@@ -397,6 +401,7 @@ export default function ScheduleApp() {
     };
 
     const assignToCalendar = () => {
+        if (!user) return alert('로그인이 필요합니다.');
         if (players.length === 0) return alert("명단을 먼저 추가하세요.");
 
         let targetYear = currentYear;
