@@ -7,8 +7,6 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
   : {};
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 const holidays = {
     "2026-06-06": "현충일",
