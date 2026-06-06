@@ -94,6 +94,12 @@ export default function ScheduleApp() {
 
     const requestSwap = async (fromDate, fromWorker, toDate, toWorker) => {
         if (!user) return alert('로그인이 필요합니다.');
+        
+        // 로그인한 사용자의 이름이 포함된 근무만 신청 가능
+        if (!fromWorker.includes(user.displayName) && !toWorker.includes(user.displayName)) {
+            return alert('자신의 근무만 변경 신청할 수 있습니다.');
+        }
+        
         try {
             await addDoc(collection(db, 'swapRequests'), {
                 requesterId: user.uid,
@@ -114,6 +120,12 @@ export default function ScheduleApp() {
 
     const acceptSwap = async (requestId, fromDate, fromWorker, toDate, toWorker) => {
         if (!user) return alert('로그인이 필요합니다.');
+        
+        // 해당 사용자가 신청을 받은 사람인지 체크
+        if (!toWorker.includes(user.displayName)) {
+            return alert('자신에게 온 신청만 수락할 수 있습니다.');
+        }
+        
         try {
             // 근무표 변경
             const newAssignments = { ...assignments };
@@ -165,6 +177,7 @@ export default function ScheduleApp() {
     useEffect(() => {
         if (!user) return;
         
+        // 로그인한 사용자가 신청한 것 또는 로그인한 사용자에게 신청된 것만 가져오기
         const q = query(
             collection(db, 'swapRequests'),
             where('requesterId', '==', user.uid)
@@ -529,13 +542,15 @@ export default function ScheduleApp() {
                     {assignments[dateKey] && user && (
                         <div className="mt-1">
                             {assignments[dateKey].split(', ').map((worker, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => openSwapModal(dateKey, worker)}
-                                    className="text-[10px] bg-green-100 text-green-700 px-1 rounded hover:bg-green-200"
-                                >
-                                    변경
-                                </button>
+                                worker.includes(user.displayName) && (
+                                    <button
+                                        key={idx}
+                                        onClick={() => openSwapModal(dateKey, worker)}
+                                        className="text-[10px] bg-green-100 text-green-700 px-1 rounded hover:bg-green-200"
+                                    >
+                                        변경
+                                    </button>
+                                )
                             ))}
                         </div>
                     )}
