@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>휴일 근무 관리 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { /* 본인의 Firebase Config 입력 */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 승인 요청 및 저장 로직
+        window.joinSystem = async () => {
+            const name = document.getElementById('userName').value;
+            if(!name) return alert("이름을 입력하세요.");
+            await setDoc(doc(db, "users", name), { name, status: "waiting" });
+            alert("입장 요청되었습니다.");
+        };
+
+        window.approveUser = async (name) => {
+            await updateDoc(doc(db, "users", name), { status: "approved" });
+        };
+    </script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold mb-6 text-center">휴일 근무 관리 시스템</h1>
+
+        <!-- 입장 및 승인 UI -->
+        <div class="flex gap-4 mb-6">
+            <div class="flex-1 p-4 bg-blue-50 border rounded text-center">
+                <h2 class="font-bold mb-2">입장 요청</h2>
+                <input type="text" id="userName" placeholder="이름 입력" class="border p-1">
+                <button onclick="joinSystem()" class="bg-blue-500 text-white p-1 rounded">요청</button>
+            </div>
+        </div>
+
+        <div class="flex border-b mb-4">
+            <button onclick="showTab('member')" class="py-2 px-4 border-b-2 border-blue-500 font-bold">근무자 관리(사다리)</button>
+            <button onclick="showTab('calendar')" class="py-2 px-4 hover:text-blue-500">휴일 근무 관리</button>
+        </div>
+        
+        <div id="member-tab" class="tab-content">
+            <canvas id="ladderCanvas" width="600" height="400" class="border bg-white mb-4"></canvas>
+            <button onclick="startLadderAnimation()" class="bg-yellow-500 text-white p-2 rounded">사다리 타기 시작</button>
+        </div>
+        
+        <div id="calendar-tab" class="tab-content hidden">
+            <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center"></div>
+        </div>
+    </div>
+
+    <script>
+        const members = ["철수", "영희", "지민", "우주", "다운"];
+        let currentMonth = new Date().getMonth();
+
+        window.showTab = (tab) => {
+            document.getElementById('member-tab').classList.toggle('hidden', tab !== 'member');
+            document.getElementById('calendar-tab').classList.toggle('hidden', tab !== 'calendar');
+            if(tab === 'calendar') renderCalendar();
+        };
+
+        window.startLadderAnimation = () => {
+            const canvas = document.getElementById('ladderCanvas');
+            const ctx = canvas.getContext('2d');
+            const cols = members.length;
+            const step = canvas.width / (cols + 1);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 이름과 세로줄
+            for(let i=0; i<cols; i++) {
+                ctx.fillStyle = "black";
+                ctx.fillText(members[i], (i+1)*step - 15, 30);
+                ctx.beginPath(); ctx.moveTo((i+1)*step, 50); ctx.lineTo((i+1)*step, 350); ctx.stroke();
+            }
+
+            // 가로줄 그리기
+            ctx.strokeStyle = "blue";
+            for(let i=0; i<8; i++) {
+                const x = (Math.floor(Math.random() * (cols-1)) + 1) * step;
+                const y = Math.floor(Math.random() * 250) + 70;
+                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + step, y); ctx.stroke();
+            }
+
+            // 애니메이션
+            let y = 50;
+            function animate() {
+                ctx.fillStyle = "red";
+                ctx.beginPath(); ctx.arc(step, y, 6, 0, Math.PI*2); ctx.fill();
+                y += 2;
+                if(y < 350) requestAnimationFrame(animate);
+            }
+            animate();
+        };
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = ['일', '월', '화', '수', '목', '금', '토'].map(d => `<div class="font-bold">${d}</div>`).join('');
+            for(let i=1; i<=30; i++) {
+                grid.innerHTML += `<div class="border p-4">${i}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
