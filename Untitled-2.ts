@@ -4,13 +4,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBjnOUtB8ux1o0g-M3WOMx9_WqVhEUjuec",
-  authDomain: "schedule-gmcave.firebaseapp.com",
-  projectId: "schedule-gmcave",
-  storageBucket: "schedule-gmcave.firebasestorage.app",
-  messagingSenderId: "1036367743066",
-  appId: "1:1036367743066:web:a537ca1431e766c99f3063"
-};
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
