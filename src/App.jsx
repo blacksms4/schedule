@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { auth, db } from './firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, collection, addDoc, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+
 const firebaseConfig = typeof __firebase_config !== 'undefined' 
   ? JSON.parse(__firebase_config) 
   : {};
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const holidays = {
     "2026-06-06": "현충일",
@@ -20,9 +24,8 @@ export default function ScheduleApp() {
     const [ladderLines, setLadderLines] = useState([]);
     const [finalResults, setFinalResults] = useState([]);
     const [currentYear, setCurrentYear] = useState(2026);
-    const [currentMonth, setCurrentMonth] = useState(5); // 6월은 5 (0-indexed)
+    const [currentMonth, setCurrentMonth] = useState(5); 
     const [assignments, setAssignments] = useState({});
-    const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
     const [activeTab, setActiveTab] = useState('calendar');
     const [workerCount, setWorkerCount] = useState(2);
     const [assignMonth, setAssignMonth] = useState(5);
@@ -120,12 +123,10 @@ export default function ScheduleApp() {
     const acceptSwap = async (requestId, fromDate, fromWorker, toDate, toWorker) => {
         if (!user) return alert('로그인이 필요합니다.');
         try {
-            // 근무표 변경
             const newAssignments = { ...assignments };
             const fromWorkers = newAssignments[fromDate].split(', ');
             const toWorkers = newAssignments[toDate].split(', ');
             
-            // fromWorker를 toWorkers에서 찾아서 fromWorkers로 이동
             const fromWorkerIndex = toWorkers.indexOf(toWorker);
             const toWorkerIndex = fromWorkers.indexOf(fromWorker);
             
@@ -139,7 +140,6 @@ export default function ScheduleApp() {
                 setAssignments(newAssignments);
                 saveUserData();
                 
-                // 신청 상태 업데이트
                 await updateDoc(doc(db, 'swapRequests', requestId), {
                     status: 'accepted',
                     respondedAt: new Date().toISOString()
@@ -169,20 +169,11 @@ export default function ScheduleApp() {
 
     useEffect(() => {
         if (!user) return;
-        
-        const q = query(
-            collection(db, 'swapRequests'),
-            where('requesterId', '==', user.uid)
-        );
-        
+        const q = query(collection(db, 'swapRequests'), where('requesterId', '==', user.uid));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const requests = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setSwapRequests(requests);
         });
-        
         return () => unsubscribe();
     }, [user]);
 
@@ -207,117 +198,15 @@ export default function ScheduleApp() {
         closeSwapModal();
     };
 
-
-    const redrawLadder = () => {
-        const canvas = canvasRef.current;
-        const ctx = ctxRef.current;
-        if (!canvas || !ctx) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const colWidth = canvas.width / (players.length + 1);
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 4;
-
-        players.forEach((p, i) => {
-            let x = (i + 1) * colWidth;
-            ctx.beginPath();
-            ctx.moveTo(x, 40);
-            ctx.lineTo(x, 260);
-            ctx.stroke();
-            ctx.fillStyle = '#1e293b';
-            ctx.textAlign = 'center';
-            ctx.fillText(p, x, 30);
-        });
-
-        ladderLines.forEach(line => {
-            ctx.beginPath();
-            ctx.moveTo(line.col * colWidth, line.y);
-            ctx.lineTo((line.col + 1) * colWidth, line.y);
-            ctx.stroke();
-        });
-
-        // 빨간색 경로 다시 그리기
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 3;
-        finalResults.forEach(result => {
-            let curCol = result.start, curY = 40;
-            while (curY < 260) {
-                let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
-                if (hit) {
-                    ctx.beginPath();
-                    ctx.moveTo(curCol * colWidth, curY);
-                    ctx.lineTo(curCol * colWidth, hit.y);
-                    ctx.stroke();
-                    curY = hit.y;
-                    let nextCol = (hit.col === curCol) ? curCol + 1 : curCol - 1;
-                    ctx.beginPath();
-                    ctx.moveTo(curCol * colWidth, curY);
-                    ctx.lineTo(nextCol * colWidth, curY);
-                    ctx.stroke();
-                    curCol = nextCol;
-                } else {
-                    ctx.beginPath();
-                    ctx.moveTo(curCol * colWidth, curY);
-                    ctx.lineTo(curCol * colWidth, 260);
-                    ctx.stroke();
-                    break;
-                }
-            }
-        });
-    };
-
-    useEffect(() => {
-        renderCalendar();
-    }, [currentYear, currentMonth, assignments]);
-
-    const showTab = (tab) => {
-        setActiveTab(tab);
-    };
-
-    const changeMonth = (offset) => {
-        setCurrentMonth(prev => {
-            let newMonth = prev + offset;
-            let newYear = currentYear;
-            if (newMonth > 11) { newMonth = 0; newYear++; }
-            if (newMonth < 0) { newMonth = 11; newYear--; }
-            setCurrentYear(newYear);
-            return newMonth;
-        });
-    };
-
-    const addPlayer = () => {
-        if (playerInput.trim()) {
-            setPlayers([...players, playerInput.trim()]);
-            setPlayerInput('');
-            saveUserData();
-        }
-    };
-
-    const removePlayer = (index) => {
-        setPlayers(players.filter((_, i) => i !== index));
-        saveUserData();
-    };
-
     const drawLadder = () => {
         if (players.length < 2) return alert("최소 2명이 필요합니다.");
         const canvas = canvasRef.current;
-        if (!canvas) {
-            console.error('Canvas not available');
-            return;
-        }
-
-        // Context가 없으면 다시 가져오기
         let ctx = ctxRef.current;
-        if (!ctx) {
-            ctx = canvas.getContext('2d');
-            ctxRef.current = ctx;
-        }
+        if (!ctx) { ctx = canvas.getContext('2d'); ctxRef.current = ctx; }
 
-        console.log('Drawing ladder with', players.length, 'players');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         setLadderLines([]);
         setFinalResults([]);
-        setCurrentPlayerIndex(0);
 
         const colWidth = canvas.width / (players.length + 1);
         ctx.strokeStyle = '#94a3b8';
@@ -353,7 +242,6 @@ export default function ScheduleApp() {
         const canvas = canvasRef.current;
         const ctx = ctxRef.current;
         if (!canvas || !ctx) return;
-
         const rect = canvas.getBoundingClientRect();
         const colWidth = canvas.width / (players.length + 1);
         let col = Math.round((e.clientX - rect.left) / colWidth);
@@ -388,41 +276,36 @@ export default function ScheduleApp() {
         setFinalResults([...finalResults, { start: col, end: curCol }]);
     };
 
-    const editAssignment = (dateKey) => {
-        const currentValue = assignments[dateKey] || '';
-        const newValue = prompt(`${dateKey} 근무자 수정 (여러명은 쉼표로 구분):`, currentValue);
-        if (newValue !== null) {
-            setAssignments({ ...assignments, [dateKey]: newValue.trim() });
+    const changeMonth = (offset) => {
+        setCurrentMonth(prev => {
+            let newMonth = prev + offset;
+            let newYear = currentYear;
+            if (newMonth > 11) { newMonth = 0; newYear++; }
+            if (newMonth < 0) { newMonth = 11; newYear--; }
+            setCurrentYear(newYear);
+            return newMonth;
+        });
+    };
+
+    const addPlayer = () => {
+        if (playerInput.trim()) {
+            setPlayers([...players, playerInput.trim()]);
+            setPlayerInput('');
             saveUserData();
         }
     };
 
-    const renderCalendar = () => {
-        // This is handled by the render function, no need to manually render
+    const removePlayer = (index) => {
+        setPlayers(players.filter((_, i) => i !== index));
+        saveUserData();
     };
 
     const assignToCalendar = () => {
         if (players.length === 0) return alert("명단을 먼저 추가하세요.");
-
-        let targetYear = currentYear;
-        let targetMonth = assignMonth;
-
-        let orderedPlayers;
-        if (finalResults.length > 0) {
-            const sortedResults = [...finalResults].sort((a, b) => a.end - b.end);
-            orderedPlayers = sortedResults.map(r => players[r.start - 1]);
-        } else {
-            orderedPlayers = [...players];
-        }
-
-        const workCount = {};
-        orderedPlayers.forEach(p => workCount[p] = 0);
-
-        let assignedDates = [];
-        const newAssignments = { ...assignments };
-        
-        // 로컬 변수로 인덱스 관리
-        let localPlayerIndex = 0;
+        let targetYear = currentYear, targetMonth = assignMonth;
+        let orderedPlayers = finalResults.length > 0 ? [...finalResults].sort((a, b) => a.end - b.end).map(r => players[r.start - 1]) : [...players];
+        const workCount = {}; orderedPlayers.forEach(p => workCount[p] = 0);
+        let assignedDates = [], newAssignments = { ...assignments }, localPlayerIndex = 0;
 
         const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
@@ -432,284 +315,68 @@ export default function ScheduleApp() {
                 const dayWorkers = [];
                 for (let w = 0; w < workerCount; w++) {
                     const player = orderedPlayers[localPlayerIndex % orderedPlayers.length];
-                    dayWorkers.push(player);
-                    workCount[player]++;
-                    localPlayerIndex++;
+                    dayWorkers.push(player); workCount[player]++; localPlayerIndex++;
                 }
                 newAssignments[dateKey] = dayWorkers.join(', ');
                 assignedDates.push(dateKey);
             }
         }
-
-        const counts = Object.values(workCount);
-        const maxCount = Math.max(...counts);
-        const minCount = Math.min(...counts);
-
-        if (maxCount !== minCount) {
-            targetMonth++;
-            if (targetMonth > 11) {
-                targetMonth = 0;
-                targetYear++;
-            }
-
-            while (true) {
-                const nextDaysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-
-                for (let i = 1; i <= nextDaysInMonth; i++) {
-                    let d = new Date(targetYear, targetMonth, i);
-                    let dateKey = `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
-                    if (d.getDay() === 0 || d.getDay() === 6 || holidays[dateKey]) {
-                        const currentCounts = Object.values(workCount);
-                        const currentMin = Math.min(...currentCounts);
-                        const currentMax = Math.max(...currentCounts);
-
-                        if (currentMin !== currentMax) {
-                            const dayWorkers = [];
-                            const minPlayers = orderedPlayers.filter(p => workCount[p] === currentMin);
-                            for (let w = 0; w < workerCount && w < minPlayers.length; w++) {
-                                const player = minPlayers[w];
-                                dayWorkers.push(player);
-                                workCount[player]++;
-                                localPlayerIndex++;
-                            }
-                            if (dayWorkers.length > 0) {
-                                newAssignments[dateKey] = dayWorkers.join(', ');
-                                assignedDates.push(dateKey);
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                }
-
-                const newCounts = Object.values(workCount);
-                const allEqual = newCounts.every(c => c === newCounts[0]);
-                if (allEqual) break;
-
-                targetMonth++;
-                if (targetMonth > 11) {
-                    targetMonth = 0;
-                    targetYear++;
-                }
-                if (targetYear > currentYear + 1) break;
-            }
-        }
-
         setAssignments(newAssignments);
-        setCurrentMonth(assignMonth);
-        setCurrentPlayerIndex(localPlayerIndex);
         saveUserData();
-
-        const countSummary = orderedPlayers.map(p => `${p}: ${workCount[p]}회`).join(', ');
-        const lastDate = assignedDates[assignedDates.length - 1];
-        alert(`${currentYear}년 ${assignMonth + 1}월부터 ${lastDate}까지 근무표가 반영되었습니다.\n${countSummary}`);
+        alert(`근무표가 반영되었습니다.`);
     };
 
     const getCalendarDays = () => {
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
         const days = [];
-
-        for (let i = 0; i < firstDay; i++) {
-            days.push(<div key={`empty-${i}`} className="bg-white min-h-[100px] p-1.5 bg-gray-50"></div>);
-        }
-
+        for (let i = 0; i < firstDay; i++) days.push(<div key={`empty-${i}`} className="bg-gray-50 min-h-[100px]"></div>);
         for (let i = 1; i <= daysInMonth; i++) {
-            let d = new Date(currentYear, currentMonth, i);
             let dateKey = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
-            let isHoliday = (d.getDay() === 0 || d.getDay() === 6 || holidays[dateKey]);
+            let isHoliday = (new Date(currentYear, currentMonth, i).getDay() === 0 || new Date(currentYear, currentMonth, i).getDay() === 6 || holidays[dateKey]);
             days.push(
-                <div
-                    key={i}
-                    className={`bg-white min-h-[100px] p-1.5 cursor-pointer hover:bg-gray-50 ${isHoliday ? 'bg-red-50 text-red-600 bg-orange-50 text-orange-600 font-bold' : ''}`}
-                >
+                <div key={i} className={`bg-white min-h-[100px] p-1.5 border ${isHoliday ? 'bg-orange-50' : ''}`}>
                     <div className="font-bold">{i}</div>
-                    <div className="text-[10px] text-orange-600">{holidays[dateKey] || ''}</div>
-                    <div className="text-xs text-blue-800 font-bold">{assignments[dateKey] || ''}</div>
+                    <div className="text-xs text-blue-800">{assignments[dateKey] || ''}</div>
                     {assignments[dateKey] && user && (
-                        <div className="mt-1">
-                            {assignments[dateKey].split(', ').map((worker, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => openSwapModal(dateKey, worker)}
-                                    className="text-[10px] bg-green-100 text-green-700 px-1 rounded hover:bg-green-200"
-                                >
-                                    변경
-                                </button>
-                            ))}
-                        </div>
+                        <div>{assignments[dateKey].split(', ').map((worker, idx) => (
+                            <button key={idx} onClick={() => openSwapModal(dateKey, worker)} className="text-[10px] bg-green-100 px-1 rounded">변경</button>
+                        ))}</div>
                     )}
                 </div>
             );
         }
-
         return days;
     };
 
     return (
-        <div className="bg-gray-100 p-6">
+        <div className="bg-gray-100 p-6 min-h-screen">
             <div className="max-w-6xl mx-auto bg-white p-6 rounded shadow">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold">휴일 근무 관리 시스템</h1>
-                    {user ? (
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm">{user.displayName}</span>
-                            <button onClick={signOut} className="bg-red-600 text-white px-4 py-2 rounded font-bold text-sm">로그아웃</button>
-                        </div>
-                    ) : (
-                        <button onClick={signInWithGoogle} className="bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm">Google 로그인</button>
-                    )}
+                    {user ? <button onClick={signOut} className="bg-red-600 text-white px-4 py-2 rounded">로그아웃</button> : <button onClick={signInWithGoogle} className="bg-blue-600 text-white px-4 py-2 rounded">Google 로그인</button>}
                 </div>
-
                 <div className="flex border-b mb-6">
-                    <button
-                        onClick={() => showTab('calendar')}
-                        className={`px-6 py-2 font-bold ${activeTab === 'calendar' ? 'border-b-4 border-blue-600 text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-600'}`}
-                    >
-                        근무표 관리
-                    </button>
-                    <button
-                        onClick={() => showTab('ladder')}
-                        className={`px-6 py-2 font-bold ${activeTab === 'ladder' ? 'border-b-4 border-blue-600 text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-600'}`}
-                    >
-                        사다리 게임 및 명단 관리
-                    </button>
+                    <button onClick={() => setActiveTab('calendar')} className={`px-6 py-2 ${activeTab === 'calendar' ? 'border-b-4 border-blue-600' : ''}`}>근무표</button>
+                    <button onClick={() => setActiveTab('ladder')} className={`px-6 py-2 ${activeTab === 'ladder' ? 'border-b-4 border-blue-600' : ''}`}>명단 관리</button>
                 </div>
-
-                <div className={activeTab === 'calendar' ? '' : 'hidden'}>
-                    <div className="flex justify-between items-center mb-4">
-                        <button onClick={() => changeMonth(-1)} className="bg-gray-200 px-4 py-1 rounded font-bold">이전달</button>
-                        <div className="text-xl font-bold">{currentYear}년 {currentMonth + 1}월</div>
-                        <button onClick={() => changeMonth(1)} className="bg-gray-200 px-4 py-1 rounded font-bold">다음달</button>
-                    </div>
-                    <div className="grid grid-cols-7 gap-px border border-gray-300 bg-gray-300">
-                        {`일 월 화 수 목 금 토`.split(' ').map((d, i) => (
-                            <div key={d} className={`text-center font-bold py-2 bg-gray-100 ${i === 0 ? 'text-red-600' : ''} ${i === 6 ? 'text-blue-600' : ''}`}>{d}</div>
-                        ))}
-                        {getCalendarDays()}
-                    </div>
-                </div>
-
-                <div className={activeTab === 'ladder' ? '' : 'hidden'}>
-                    <div className="mb-6 p-4 border rounded bg-gray-50">
-                        <h2 className="font-bold mb-2">근무자 명단</h2>
-                        <div className="flex gap-2 mb-4">
-                            <input
-                                type="text"
-                                placeholder="이름 입력"
-                                className="flex-1 border p-2 rounded"
-                                value={playerInput}
-                                onChange={(e) => setPlayerInput(e.target.value)}
-                            />
-                            <button onClick={addPlayer} className="bg-blue-600 text-white px-4 py-2 rounded font-bold">추가</button>
+                {activeTab === 'calendar' && (
+                    <div>
+                        <div className="flex justify-between mb-4">
+                            <button onClick={() => changeMonth(-1)}>이전</button>
+                            <span className="font-bold">{currentYear}년 {currentMonth + 1}월</span>
+                            <button onClick={() => changeMonth(1)}>다음</button>
                         </div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <label className="text-sm font-bold">근무자 수:</label>
-                            <select
-                                className="border p-2 rounded"
-                                value={workerCount}
-                                onChange={(e) => setWorkerCount(parseInt(e.target.value))}
-                            >
-                                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-                                    <option key={n} value={n}>{n}명</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {players.map((p, i) => (
-                                <span key={i} className="bg-blue-100 px-3 py-1 rounded text-sm flex items-center gap-2">
-                                    {i + 1}. {p}
-                                    <button onClick={() => removePlayer(i)} className="text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <div className="flex gap-2 mb-4">
-                                <button onClick={drawLadder} className="bg-indigo-600 text-white px-4 py-2 rounded font-bold flex-1">사다리 생성</button>
-                                <select
-                                    className="border p-2 rounded"
-                                    value={assignMonth}
-                                    onChange={(e) => setAssignMonth(parseInt(e.target.value))}
-                                >
-                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(m => (
-                                        <option key={m} value={m}>{m + 1}월</option>
-                                    ))}
-                                </select>
-                                <button onClick={assignToCalendar} className="bg-green-600 text-white px-4 py-2 rounded font-bold flex-1">선택 월 근무표 반영</button>
-                            </div>
-                            <canvas
-                                ref={canvasRef}
-                                width={600}
-                                height={300}
-                                onClick={handleCanvasClick}
-                                className="touch-none bg-gray-50 border border-gray-200 rounded-lg cursor-pointer"
-                            />
-                        </div>
-                        <div className="w-64 p-4 bg-yellow-50 border rounded-lg">
-                            <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지</h3>
-                            <div className="text-sm space-y-1">
-                                {finalResults.map((r, i) => (
-                                    <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {showSwapModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
-                            <h2 className="text-xl font-bold mb-4">근무 변경 신청</h2>
-                            <div className="mb-4">
-                                <p className="text-sm text-gray-600">현재 날짜: {selectedDate}</p>
-                                <p className="text-sm text-gray-600">현재 근무자: {selectedWorker}</p>
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-bold mb-2">대상 날짜 (YYYY-MM-DD)</label>
-                                <input
-                                    type="text"
-                                    value={targetDate}
-                                    onChange={(e) => setTargetDate(e.target.value)}
-                                    className="w-full border p-2 rounded"
-                                    placeholder="2026-06-07"
-                                />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-bold mb-2">대상 근무자</label>
-                                <input
-                                    type="text"
-                                    value={targetWorker}
-                                    onChange={(e) => setTargetWorker(e.target.value)}
-                                    className="w-full border p-2 rounded"
-                                    placeholder="이름 입력"
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <button onClick={submitSwapRequest} className="bg-blue-600 text-white px-4 py-2 rounded font-bold flex-1">신청</button>
-                                <button onClick={closeSwapModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded font-bold flex-1">취소</button>
-                            </div>
-                        </div>
+                        <div className="grid grid-cols-7 gap-px border">{getCalendarDays()}</div>
                     </div>
                 )}
-
-                {swapRequests.length > 0 && (
-                    <div className="mt-6 p-4 border rounded bg-yellow-50">
-                        <h3 className="font-bold mb-2">근무 변경 신청 목록</h3>
-                        {swapRequests.map((request) => (
-                            <div key={request.id} className="border-b pb-2 mb-2 last:border-0">
-                                <p className="text-sm">{request.fromDate} ({request.fromWorker}) → {request.toDate} ({request.toWorker})</p>
-                                <p className="text-xs text-gray-600">상태: {request.status}</p>
-                                {request.status === 'pending' && (
-                                    <div className="flex gap-2 mt-2">
-                                        <button onClick={() => acceptSwap(request.id, request.fromDate, request.fromWorker, request.toDate, request.toWorker)} className="bg-green-600 text-white px-2 py-1 rounded text-xs">수락</button>
-                                        <button onClick={() => rejectSwap(request.id)} className="bg-red-600 text-white px-2 py-1 rounded text-xs">거절</button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                {activeTab === 'ladder' && (
+                    <div>
+                        <input value={playerInput} onChange={(e) => setPlayerInput(e.target.value)} className="border p-2" />
+                        <button onClick={addPlayer} className="bg-blue-600 text-white px-4 py-2 ml-2">추가</button>
+                        <div className="mt-4"><button onClick={drawLadder} className="bg-indigo-600 text-white px-4 py-2">사다리 생성</button>
+                        <button onClick={assignToCalendar} className="bg-green-600 text-white px-4 py-2 ml-2">근무표 반영</button></div>
+                        <canvas ref={canvasRef} width={600} height={300} onClick={handleCanvasClick} className="border mt-4" />
                     </div>
                 )}
             </div>
