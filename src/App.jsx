@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, addDoc, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 
+// Firebase 설정이 없으면 null로 처리하여 앱이 멈추지 않게 함
 const firebaseConfig = typeof __firebase_config !== 'undefined' 
   ? JSON.parse(__firebase_config) 
   : null;
@@ -12,25 +13,15 @@ const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
 
-const holidays = {
-    "2026-06-06": "현충일",
-    "2026-07-17": "제헌절",
-    "2026-08-15": "광복절"
-};
-
 export default function ScheduleApp() {
     const [user, setUser] = useState(null);
-    const [players, setPlayers] = useState([]);
+    const [players, setPlayers] = useState(['테스트1', '테스트2', '테스트3']); // 테스트용 기본 데이터
     const [assignments, setAssignments] = useState({});
     const [activeTab, setActiveTab] = useState('calendar');
     const [currentYear, setCurrentYear] = useState(2026);
     const [currentMonth, setCurrentMonth] = useState(5); 
-    const [ladderLines, setLadderLines] = useState([]);
-    const [finalResults, setFinalResults] = useState([]);
-    const [workerCount, setWorkerCount] = useState(2);
     const [playerInput, setPlayerInput] = useState('');
     const canvasRef = useRef(null);
-    const ctxRef = useRef(null);
 
     useEffect(() => {
         if (!auth) return;
@@ -51,20 +42,7 @@ export default function ScheduleApp() {
                 setAssignments(userData.assignments || {});
             }
         } catch (error) {
-            console.error('Error loading data:', error);
-        }
-    };
-
-    const saveUserData = async () => {
-        if (!user || !db) return;
-        try {
-            await setDoc(doc(db, 'users', user.uid), {
-                players,
-                assignments,
-                updatedAt: new Date().toISOString()
-            }, { merge: true });
-        } catch (error) {
-            console.error('Error saving data:', error);
+            console.error('데이터 로드 실패:', error);
         }
     };
 
@@ -83,26 +61,13 @@ export default function ScheduleApp() {
         await firebaseSignOut(auth);
     };
 
-    if (!app) {
-        return (
-            <div className="p-10 text-center text-red-600">
-                <h1 className="text-xl font-bold">Firebase 설정 오류</h1>
-                <p>Firebase 설정값이 제공되지 않았습니다. 환경 설정을 확인해주세요.</p>
-            </div>
-        );
-    }
-
     const drawLadder = () => {
         if (players.length < 2) return alert("최소 2명이 필요합니다.");
         const canvas = canvasRef.current;
         if (!canvas) return;
         let ctx = canvas.getContext('2d');
-        ctxRef.current = ctx;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        setLadderLines([]);
-        setFinalResults([]);
-
+        
         const colWidth = canvas.width / (players.length + 1);
         ctx.strokeStyle = '#94a3b8';
         ctx.lineWidth = 4;
@@ -143,10 +108,14 @@ export default function ScheduleApp() {
             <div className="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-sm">
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold">휴일 근무 관리 시스템</h1>
-                    {user ? (
-                        <button onClick={signOut} className="text-sm bg-red-100 text-red-700 px-4 py-2 rounded">로그아웃</button>
+                    {auth ? (
+                        user ? (
+                            <button onClick={signOut} className="text-sm bg-red-100 text-red-700 px-4 py-2 rounded">로그아웃</button>
+                        ) : (
+                            <button onClick={signInWithGoogle} className="text-sm bg-blue-600 text-white px-4 py-2 rounded">로그인</button>
+                        )
                     ) : (
-                        <button onClick={signInWithGoogle} className="text-sm bg-blue-600 text-white px-4 py-2 rounded">로그인</button>
+                        <span className="text-xs text-gray-500">Firebase 설정 미완료</span>
                     )}
                 </header>
 
