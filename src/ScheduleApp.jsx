@@ -419,7 +419,7 @@ export default function ScheduleApp() {
     };
 
     const editAssignment = (dateKey) => {
-        if (!user) return alert('로그인이 필요합니다.');
+        if (!isAdmin) return alert('관리자만 근무자를 수정할 수 있습니다.');
         const currentValue = assignments[dateKey] || '';
         const newValue = prompt(`${dateKey} 근무자 수정 (여러명은 쉼표로 구분):`, currentValue);
         if (newValue !== null) {
