@@ -453,13 +453,33 @@ export default function ScheduleApp() {
         let assignedDates = [];
         const newAssignments = { ...assignments };
         
-        // 로컬 변수로 인덱스 관리
-        let localPlayerIndex = 0;
+        // 기존에 배정된 근무표에서 workCount 계산
+        Object.entries(assignments).forEach(([dateKey, workers]) => {
+            if (workers) {
+                workers.split(', ').forEach(worker => {
+                    if (workCount[worker] !== undefined) {
+                        workCount[worker]++;
+                    }
+                });
+            }
+        });
+
+        // 마지막으로 배정된 날짜 찾기
+        const existingDates = Object.keys(assignments).sort();
+        let lastAssignedDate = existingDates.length > 0 ? existingDates[existingDates.length - 1] : null;
+        
+        // 로컬 변수로 인덱스 관리 - 기존 배정된 근무수만큼 시작
+        let totalAssigned = Object.values(workCount).reduce((sum, count) => sum + count, 0);
+        let localPlayerIndex = totalAssigned;
 
         const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
             let d = new Date(targetYear, targetMonth, i);
             let dateKey = `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+            
+            // 기존에 배정된 날짜는 건너뜀
+            if (assignments[dateKey]) continue;
+            
             if (d.getDay() === 0 || d.getDay() === 6 || holidays[dateKey]) {
                 const dayWorkers = [];
                 for (let w = 0; w < workerCount; w++) {
@@ -490,6 +510,10 @@ export default function ScheduleApp() {
                 for (let i = 1; i <= nextDaysInMonth; i++) {
                     let d = new Date(targetYear, targetMonth, i);
                     let dateKey = `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+                    
+                    // 기존에 배정된 날짜는 건너뜀
+                    if (assignments[dateKey]) continue;
+                    
                     if (d.getDay() === 0 || d.getDay() === 6 || holidays[dateKey]) {
                         const currentCounts = Object.values(workCount);
                         const currentMin = Math.min(...currentCounts);
@@ -533,7 +557,7 @@ export default function ScheduleApp() {
         saveUserData();
 
         const countSummary = orderedPlayers.map(p => `${p}: ${workCount[p]}회`).join(', ');
-        const lastDate = assignedDates[assignedDates.length - 1];
+        const lastDate = assignedDates.length > 0 ? assignedDates[assignedDates.length - 1] : lastAssignedDate;
         alert(`${currentYear}년 ${assignMonth + 1}월부터 ${lastDate}까지 근무표가 반영되었습니다.\n${countSummary}`);
     };
 
@@ -553,6 +577,7 @@ export default function ScheduleApp() {
             days.push(
                 <div
                     key={i}
+                    onClick={() => editAssignment(dateKey)}
                     className={`bg-white min-h-[100px] p-1.5 cursor-pointer hover:bg-gray-50 ${isHoliday ? 'bg-red-50 text-red-600 bg-orange-50 text-orange-600 font-bold' : ''}`}
                 >
                     <div className="font-bold">{i}</div>
@@ -564,7 +589,7 @@ export default function ScheduleApp() {
                                 worker.includes(user.displayName) && (
                                     <button
                                         key={idx}
-                                        onClick={() => openSwapModal(dateKey, worker)}
+                                        onClick={(e) => { e.stopPropagation(); openSwapModal(dateKey, worker); }}
                                         className="text-[10px] bg-green-100 text-green-700 px-1 rounded hover:bg-green-200"
                                     >
                                         변경
