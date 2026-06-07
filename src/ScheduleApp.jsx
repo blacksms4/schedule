@@ -180,31 +180,15 @@ export default function ScheduleApp() {
         }
     };
 
-    const clearOldSwapRequests = async () => {
-        if (!isAdmin) return alert('관리자만 초기화할 수 있습니다.');
-        
-        const targetDate = new Date(currentYear, currentMonth, 1);
-        const targetMonthKey = `${targetDate.getFullYear()}-${(targetDate.getMonth() + 1).toString().padStart(2, '0')}`;
+    const deleteSwapRequest = async (requestId) => {
+        if (!user) return alert('로그인이 필요합니다.');
+        if (!confirm('이 신청을 삭제하시겠습니까?')) return;
         
         try {
-            const q = query(collection(db, 'swapRequests'));
-            const snapshot = await getDocs(q);
-            
-            let deletedCount = 0;
-            snapshot.forEach(async (doc) => {
-                const data = doc.data();
-                const requestDate = new Date(data.createdAt);
-                const requestMonthKey = `${requestDate.getFullYear()}-${(requestDate.getMonth() + 1).toString().padStart(2, '0')}`;
-                
-                if (requestMonthKey < targetMonthKey) {
-                    await deleteDoc(doc.ref);
-                    deletedCount++;
-                }
-            });
-            
-            alert(`${targetMonthKey} 이전의 근무 변경 신청 ${deletedCount}건이 삭제되었습니다.`);
+            await deleteDoc(doc(db, 'swapRequests', requestId));
+            alert('근무 변경 신청이 삭제되었습니다.');
         } catch (error) {
-            console.error('Error clearing old swap requests:', error);
+            console.error('Error deleting swap request:', error);
             alert('삭제 실패: ' + error.message);
         }
     };
@@ -747,18 +731,16 @@ export default function ScheduleApp() {
 
                 {swapRequests.length > 0 && (
                     <div className="mt-6 p-4 border rounded bg-yellow-50">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-bold">근무 변경 신청 목록</h3>
-                            {isAdmin && (
-                                <button onClick={clearOldSwapRequests} className="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold">
-                                    이전 월 기록 초기화
-                                </button>
-                            )}
-                        </div>
+                        <h3 className="font-bold mb-2">근무 변경 신청 목록</h3>
                         {swapRequests.map((request) => (
                             <div key={request.id} className="border-b pb-2 mb-2 last:border-0">
-                                <p className="text-sm">{request.fromDate} ({request.fromWorker}) → {request.toDate} ({request.toWorker})</p>
-                                <p className="text-xs text-gray-600">상태: {request.status}</p>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-sm">{request.fromDate} ({request.fromWorker}) → {request.toDate} ({request.toWorker})</p>
+                                        <p className="text-xs text-gray-600">상태: {request.status}</p>
+                                    </div>
+                                    <button onClick={() => deleteSwapRequest(request.id)} className="bg-red-600 text-white px-2 py-1 rounded text-xs">삭제</button>
+                                </div>
                                 {request.status === 'pending' && (
                                     <div className="flex gap-2 mt-2">
                                         <button onClick={() => acceptSwap(request.id, request.fromDate, request.fromWorker, request.toDate, request.toWorker)} className="bg-green-600 text-white px-2 py-1 rounded text-xs">수락</button>
