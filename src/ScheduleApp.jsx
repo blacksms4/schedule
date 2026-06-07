@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, onSnaps
 const holidays = {
     "2026-06-06": "현충일",
     "2026-07-17": "제헌절",
-    "2026-08-15": "광복절"
+    "2026-08-15": "광복절",
     "2026-08-17": "대체휴무일"
 };
 
