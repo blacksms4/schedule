@@ -7,6 +7,7 @@ const holidays = {
     "2026-06-06": "현충일",
     "2026-07-17": "제헌절",
     "2026-08-15": "광복절"
+    "2026-08-17": "대체휴무일"
 };
 
 export default function ScheduleApp() {
@@ -15,7 +16,7 @@ export default function ScheduleApp() {
     const [adminEmails, setAdminEmails] = useState([]);
     const [players, setPlayers] = useState([]);
     const [ladderLines, setLadderLines] = useState([]);
-    const [finalResults, setFinalResults] = useState([]);
+    const [finalResults, setFinalResults] = useState({});
     const [currentYear, setCurrentYear] = useState(2026);
     const [currentMonth, setCurrentMonth] = useState(5); // 6월은 5 (0-indexed)
     const [assignments, setAssignments] = useState({});
@@ -88,6 +89,7 @@ export default function ScheduleApp() {
                 const userData = userDoc.data();
                 setPlayers(userData.players || []);
                 setAssignments(userData.assignments || {});
+                setFinalResults(userData.finalResults || {});
             }
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -100,6 +102,7 @@ export default function ScheduleApp() {
             await setDoc(doc(db, 'users', user.uid), {
                 players,
                 assignments,
+                finalResults,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
         } catch (error) {
@@ -479,7 +482,11 @@ export default function ScheduleApp() {
                 break;
             }
         }
-        setFinalResults([...finalResults, { start: col, end: curCol }]);
+        const monthKey = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`;
+        setFinalResults({
+            ...finalResults,
+            [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
+        });
     };
 
     const editAssignment = (dateKey) => {
@@ -504,8 +511,10 @@ export default function ScheduleApp() {
         let targetMonth = assignMonth;
 
         let orderedPlayers;
-        if (finalResults.length > 0) {
-            const sortedResults = [...finalResults].sort((a, b) => a.end - b.end);
+        const monthKey = `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}`;
+        const monthResults = finalResults[monthKey] || [];
+        if (monthResults.length > 0) {
+            const sortedResults = [...monthResults].sort((a, b) => a.end - b.end);
             orderedPlayers = sortedResults.map(r => players[r.start - 1]);
         } else {
             orderedPlayers = [...players];
@@ -700,16 +709,20 @@ export default function ScheduleApp() {
                 </div>
 
                 <div className={activeTab === 'calendar' ? '' : 'hidden'}>
-                    {finalResults.length > 0 && (
-                        <div className="mb-4 p-4 bg-yellow-50 border rounded-lg">
-                            <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지</h3>
-                            <div className="text-sm space-y-1">
-                                {finalResults.map((r, i) => (
-                                    <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
-                                ))}
+                    {(() => {
+                        const monthKey = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`;
+                        const monthResults = finalResults[monthKey] || [];
+                        return monthResults.length > 0 && (
+                            <div className="mb-4 p-4 bg-yellow-50 border rounded-lg">
+                                <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지 ({currentYear}년 {currentMonth + 1}월)</h3>
+                                <div className="text-sm space-y-1">
+                                    {monthResults.map((r, i) => (
+                                        <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
                     <div className="flex justify-between items-center mb-4">
                         <button onClick={() => changeMonth(-1)} className="bg-gray-200 px-4 py-1 rounded font-bold">이전달</button>
                         <div className="text-xl font-bold">{currentYear}년 {currentMonth + 1}월</div>
@@ -806,11 +819,15 @@ export default function ScheduleApp() {
                             />
                         </div>
                         <div className="w-64 p-4 bg-yellow-50 border rounded-lg">
-                            <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지</h3>
+                            <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지 ({currentYear}년 {assignMonth + 1}월)</h3>
                             <div className="text-sm space-y-1">
-                                {finalResults.map((r, i) => (
-                                    <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
-                                ))}
+                                {(() => {
+                                    const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
+                                    const monthResults = finalResults[monthKey] || [];
+                                    return monthResults.map((r, i) => (
+                                        <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
+                                    ));
+                                })()}
                             </div>
                         </div>
                     </div>
