@@ -484,7 +484,6 @@ export default function ScheduleApp() {
                 break;
             }
         }
-        const monthKey = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`;
         setFinalResults({
             ...finalResults,
             [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
