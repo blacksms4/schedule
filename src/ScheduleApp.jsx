@@ -6,8 +6,7 @@ import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, onSnaps
 const holidays = {
     "2026-06-06": "현충일",
     "2026-07-17": "제헌절",
-    "2026-08-15": "광복절",
-    "2026-08-17": "대체휴무일"
+    "2026-08-15": "광복절"
 };
 
 export default function ScheduleApp() {
@@ -454,7 +453,10 @@ export default function ScheduleApp() {
         const rect = canvas.getBoundingClientRect();
         const colWidth = canvas.width / (players.length + 1);
         let col = Math.round((e.clientX - rect.left) / colWidth);
-        if (col < 1 || col > players.length || finalResults.some(r => r.start === col)) return;
+        
+        const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
+        const monthResults = finalResults[monthKey] || [];
+        if (col < 1 || col > players.length || monthResults.some(r => r.start === col)) return;
 
         let curCol = col, curY = 40;
         ctx.strokeStyle = 'red';
