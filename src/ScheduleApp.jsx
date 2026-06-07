@@ -9,11 +9,10 @@ const holidays = {
     "2026-08-15": "광복절"
 };
 
-const ADMIN_EMAIL = 'blacksms4@gmail.com'; // 관리자 이메일
-
 export default function ScheduleApp() {
     const [user, setUser] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [adminEmails, setAdminEmails] = useState([]);
     const [players, setPlayers] = useState([]);
     const [ladderLines, setLadderLines] = useState([]);
     const [finalResults, setFinalResults] = useState([]);
@@ -31,6 +30,8 @@ export default function ScheduleApp() {
     const [selectedWorker, setSelectedWorker] = useState(null);
     const [targetDate, setTargetDate] = useState('');
     const [targetWorker, setTargetWorker] = useState('');
+    const [showAdminModal, setShowAdminModal] = useState(false);
+    const [adminEmailInput, setAdminEmailInput] = useState('');
 
     const canvasRef = useRef(null);
     const ctxRef = useRef(null);
@@ -46,13 +47,39 @@ export default function ScheduleApp() {
             setUser(currentUser);
             if (currentUser) {
                 loadUserData(currentUser);
-                setIsAdmin(currentUser.email === ADMIN_EMAIL);
             } else {
                 setIsAdmin(false);
             }
         });
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        const loadAdminEmails = async () => {
+            try {
+                const adminDoc = await getDoc(doc(db, 'config', 'admins'));
+                if (adminDoc.exists()) {
+                    const data = adminDoc.data();
+                    setAdminEmails(data.emails || []);
+                } else {
+                    // 초기 관리자 설정
+                    await setDoc(doc(db, 'config', 'admins'), {
+                        emails: ['blacksms4@gmail.com']
+                    });
+                    setAdminEmails(['blacksms4@gmail.com']);
+                }
+            } catch (error) {
+                console.error('Error loading admin emails:', error);
+            }
+        };
+        loadAdminEmails();
+    }, []);
+
+    useEffect(() => {
+        if (user && adminEmails.length > 0) {
+            setIsAdmin(adminEmails.includes(user.email));
+        }
+    }, [user, adminEmails]);
 
     const loadUserData = async (currentUser) => {
         try {
@@ -193,6 +220,43 @@ export default function ScheduleApp() {
         }
     };
 
+    const addAdmin = async () => {
+        if (!isAdmin) return alert('관리자만 관리자를 추가할 수 있습니다.');
+        if (!adminEmailInput.trim()) return alert('이메일을 입력해주세요.');
+        
+        try {
+            const newAdminEmails = [...adminEmails, adminEmailInput.trim()];
+            await updateDoc(doc(db, 'config', 'admins'), {
+                emails: newAdminEmails
+            });
+            setAdminEmails(newAdminEmails);
+            setAdminEmailInput('');
+            alert('관리자가 추가되었습니다.');
+        } catch (error) {
+            console.error('Error adding admin:', error);
+            alert('추가 실패: ' + error.message);
+        }
+    };
+
+    const removeAdmin = async (email) => {
+        if (!isAdmin) return alert('관리자만 관리자를 삭제할 수 있습니다.');
+        if (!confirm(`${email} 관리자 권한을 삭제하시겠습니까?`)) return;
+        
+        if (adminEmails.length <= 1) return alert('최소 1명의 관리자가 필요합니다.');
+        
+        try {
+            const newAdminEmails = adminEmails.filter(e => e !== email);
+            await updateDoc(doc(db, 'config', 'admins'), {
+                emails: newAdminEmails
+            });
+            setAdminEmails(newAdminEmails);
+            alert('관리자가 삭제되었습니다.');
+        } catch (error) {
+            console.error('Error removing admin:', error);
+            alert('삭제 실패: ' + error.message);
+        }
+    };
+
     useEffect(() => {
         if (!user) return;
         
@@ -328,7 +392,7 @@ export default function ScheduleApp() {
     };
 
     const drawLadder = () => {
-        if (!user) return alert('로그인이 필요합니다.');
+        if (!isAdmin) return alert('관리자만 사다리를 생성할 수 있습니다.');
         if (players.length < 2) return alert("최소 2명이 필요합니다.");
         const canvas = canvasRef.current;
         if (!canvas) {
@@ -433,7 +497,7 @@ export default function ScheduleApp() {
     };
 
     const assignToCalendar = () => {
-        if (!user) return alert('로그인이 필요합니다.');
+        if (!isAdmin) return alert('관리자만 근무표를 반영할 수 있습니다.');
         if (players.length === 0) return alert("명단을 먼저 추가하세요.");
 
         let targetYear = currentYear;
@@ -636,6 +700,16 @@ export default function ScheduleApp() {
                 </div>
 
                 <div className={activeTab === 'calendar' ? '' : 'hidden'}>
+                    {finalResults.length > 0 && (
+                        <div className="mb-4 p-4 bg-yellow-50 border rounded-lg">
+                            <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지</h3>
+                            <div className="text-sm space-y-1">
+                                {finalResults.map((r, i) => (
+                                    <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <div className="flex justify-between items-center mb-4">
                         <button onClick={() => changeMonth(-1)} className="bg-gray-200 px-4 py-1 rounded font-bold">이전달</button>
                         <div className="text-xl font-bold">{currentYear}년 {currentMonth + 1}월</div>
@@ -650,6 +724,30 @@ export default function ScheduleApp() {
                 </div>
 
                 <div className={activeTab === 'ladder' ? '' : 'hidden'}>
+                    {isAdmin && (
+                        <div className="mb-6 p-4 border rounded bg-purple-50">
+                            <h2 className="font-bold mb-2">관리자 관리</h2>
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    type="email"
+                                    placeholder="이메일 입력"
+                                    className="flex-1 border p-2 rounded"
+                                    value={adminEmailInput}
+                                    onChange={(e) => setAdminEmailInput(e.target.value)}
+                                />
+                                <button onClick={addAdmin} className="bg-purple-600 text-white px-4 py-2 rounded font-bold">추가</button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {adminEmails.map((email, i) => (
+                                    <span key={i} className="bg-purple-100 px-3 py-1 rounded text-sm flex items-center gap-2">
+                                        {email}
+                                        <button onClick={() => removeAdmin(email)} className="text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mb-6 p-4 border rounded bg-gray-50">
                         <h2 className="font-bold mb-2">근무자 명단</h2>
                         <div className="flex gap-2 mb-4">
