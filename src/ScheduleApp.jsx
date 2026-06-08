@@ -84,29 +84,31 @@ export default function ScheduleApp() {
 
     const loadUserData = async (currentUser) => {
         try {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                setPlayers(userData.players || []);
-                setAssignments(userData.assignments || {});
-                setFinalResults(userData.finalResults || {});
+            const scheduleDoc = await getDoc(doc(db, 'schedule', 'main'));
+            if (scheduleDoc.exists()) {
+                const scheduleData = scheduleDoc.data();
+                setPlayers(scheduleData.players || []);
+                setAssignments(scheduleData.assignments || {});
+                setFinalResults(scheduleData.finalResults || {});
+                setScheduleRange(scheduleData.scheduleRange || '');
             }
         } catch (error) {
-            console.error('Error loading user data:', error);
+            console.error('Error loading schedule data:', error);
         }
     };
 
     const saveUserData = async () => {
-        if (!user) return;
+        if (!isAdmin) return;
         try {
-            await setDoc(doc(db, 'users', user.uid), {
+            await setDoc(doc(db, 'schedule', 'main'), {
                 players,
                 assignments,
                 finalResults,
+                scheduleRange,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
         } catch (error) {
-            console.error('Error saving user data:', error);
+            console.error('Error saving schedule data:', error);
         }
     };
 
