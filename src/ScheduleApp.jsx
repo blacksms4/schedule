@@ -91,6 +91,13 @@ export default function ScheduleApp() {
                     setFinalResults(data.finalResults || {});
                     setScheduleRange(data.scheduleRange || '');
                     setLadderLines(data.ladderLines || []);
+                    
+                    // 사다리가 있으면 다시 그리기
+                    if (data.ladderLines && data.ladderLines.length > 0) {
+                        setTimeout(() => redrawLadder(), 100);
+                    }
+                } else {
+                    console.log('Schedule document does not exist yet');
                 }
             } catch (error) {
                 console.error('Error loading schedule data:', error);
