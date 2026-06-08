@@ -32,6 +32,7 @@ export default function ScheduleApp() {
     const [targetWorker, setTargetWorker] = useState('');
     const [showAdminModal, setShowAdminModal] = useState(false);
     const [adminEmailInput, setAdminEmailInput] = useState('');
+    const [scheduleRange, setScheduleRange] = useState('');
 
     const canvasRef = useRef(null);
     const ctxRef = useRef(null);
@@ -632,7 +633,9 @@ export default function ScheduleApp() {
 
         const countSummary = orderedPlayers.map(p => `${p}: ${workCount[p]}회`).join(', ');
         const lastDate = assignedDates.length > 0 ? assignedDates[assignedDates.length - 1] : lastAssignedDate;
-        alert(`${currentYear}년 ${assignMonth + 1}월부터 ${lastDate}까지 근무표가 반영되었습니다.\n${countSummary}`);
+        const rangeText = `${currentYear}년 ${assignMonth + 1}월부터 ${lastDate}까지`;
+        setScheduleRange(rangeText);
+        alert(`${rangeText} 근무표가 반영되었습니다.\n${countSummary}`);
     };
 
     const getCalendarDays = () => {
@@ -721,6 +724,11 @@ export default function ScheduleApp() {
                                         <div key={i}>{r.start}번 {players[r.start - 1]} → {r.end}번 도착</div>
                                     ))}
                                 </div>
+                                {scheduleRange && (
+                                    <div className="mt-2 pt-2 border-t text-sm text-gray-600">
+                                        근무표 적용 범위: {scheduleRange}
+                                    </div>
+                                )}
                             </div>
                         );
                     })()}
