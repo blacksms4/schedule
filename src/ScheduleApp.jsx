@@ -14,6 +14,7 @@ const holidays = {
     "2026-10-05": "개천절 대체휴일",
     "2026-10-09": "한글날",
     "2026-12-25": "성탄절"
+   
 };
 
 export default function ScheduleApp() {
@@ -218,7 +219,7 @@ export default function ScheduleApp() {
                 newAssignments[toDate] = toWorkers.join(', ');
                 
                 setAssignments(newAssignments);
-                saveUserData();
+                saveUserData(newAssignments);
                 
                 // 신청 상태 업데이트
                 await updateDoc(doc(db, 'swapRequests', requestId), {
