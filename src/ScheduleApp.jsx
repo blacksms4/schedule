@@ -107,8 +107,12 @@ export default function ScheduleApp() {
     }, []);
 
     const saveUserData = async () => {
-        if (!isAdmin) return;
+        if (!isAdmin) {
+            console.log('saveUserData called but user is not admin');
+            return;
+        }
         try {
+            console.log('Saving schedule data:', { players, assignments, finalResults, scheduleRange, ladderLines });
             await setDoc(doc(db, 'schedule', 'main'), {
                 players,
                 assignments,
@@ -117,6 +121,7 @@ export default function ScheduleApp() {
                 ladderLines,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
+            console.log('Schedule data saved successfully');
         } catch (error) {
             console.error('Error saving schedule data:', error);
         }
