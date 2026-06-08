@@ -83,9 +83,12 @@ export default function ScheduleApp() {
     useEffect(() => {
         const loadScheduleData = async () => {
             try {
+                console.log('Loading schedule data...');
                 const scheduleDoc = await getDoc(doc(db, 'schedule', 'main'));
+                console.log('Schedule doc exists:', scheduleDoc.exists());
                 if (scheduleDoc.exists()) {
                     const data = scheduleDoc.data();
+                    console.log('Loaded data:', data);
                     setPlayers(data.players || []);
                     setAssignments(data.assignments || {});
                     setFinalResults(data.finalResults || {});
@@ -347,7 +350,9 @@ export default function ScheduleApp() {
         // 빨간색 경로 다시 그리기
         ctx.strokeStyle = 'red';
         ctx.lineWidth = 3;
-        finalResults.forEach(result => {
+        const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
+        const monthResults = finalResults[monthKey] || [];
+        monthResults.forEach(result => {
             let curCol = result.start, curY = 40;
             while (curY < 260) {
                 let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
