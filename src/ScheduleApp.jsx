@@ -46,9 +46,7 @@ export default function ScheduleApp() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
-            if (currentUser) {
-                loadUserData(currentUser);
-            } else {
+            if (!currentUser) {
                 setIsAdmin(false);
             }
         });
@@ -82,20 +80,18 @@ export default function ScheduleApp() {
         }
     }, [user, adminEmails]);
 
-    const loadUserData = async (currentUser) => {
-        try {
-            const scheduleDoc = await getDoc(doc(db, 'schedule', 'main'));
-            if (scheduleDoc.exists()) {
-                const scheduleData = scheduleDoc.data();
-                setPlayers(scheduleData.players || []);
-                setAssignments(scheduleData.assignments || {});
-                setFinalResults(scheduleData.finalResults || {});
-                setScheduleRange(scheduleData.scheduleRange || '');
+    useEffect(() => {
+        const unsubscribe = onSnapshot(doc(db, 'schedule', 'main'), (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                setPlayers(data.players || []);
+                setAssignments(data.assignments || {});
+                setFinalResults(data.finalResults || {});
+                setScheduleRange(data.scheduleRange || '');
             }
-        } catch (error) {
-            console.error('Error loading schedule data:', error);
-        }
-    };
+        });
+        return () => unsubscribe();
+    }, []);
 
     const saveUserData = async () => {
         if (!isAdmin) return;
