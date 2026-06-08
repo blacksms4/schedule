@@ -56,11 +56,15 @@ export default function ScheduleApp() {
     useEffect(() => {
         const loadAdminEmails = async () => {
             try {
+                console.log('Loading admin emails...');
                 const adminDoc = await getDoc(doc(db, 'config', 'admins'));
+                console.log('Admin doc exists:', adminDoc.exists());
                 if (adminDoc.exists()) {
                     const data = adminDoc.data();
+                    console.log('Admin data:', data);
                     setAdminEmails(data.emails || []);
                 } else {
+                    console.log('Creating initial admin config');
                     // 초기 관리자 설정
                     await setDoc(doc(db, 'config', 'admins'), {
                         emails: ['blacksms4@gmail.com']
