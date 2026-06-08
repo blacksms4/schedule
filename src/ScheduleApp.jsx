@@ -453,6 +453,7 @@ export default function ScheduleApp() {
             }
         }
         setLadderLines(newLadderLines);
+        saveUserData();
     };
 
     const handleCanvasClick = (e) => {
@@ -498,6 +499,7 @@ export default function ScheduleApp() {
             ...finalResults,
             [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
         });
+        saveUserData();
     };
 
     const editAssignment = (dateKey) => {
