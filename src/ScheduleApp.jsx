@@ -671,6 +671,7 @@ export default function ScheduleApp() {
         setAssignments(newAssignments);
         setCurrentMonth(assignMonth);
         setCurrentPlayerIndex(localPlayerIndex);
+        console.log('Assigning to calendar, new assignments:', newAssignments);
         saveUserData();
 
         const countSummary = orderedPlayers.map(p => `${p}: ${workCount[p]}회`).join(', ');
