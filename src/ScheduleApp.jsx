@@ -90,6 +90,7 @@ export default function ScheduleApp() {
                     setAssignments(data.assignments || {});
                     setFinalResults(data.finalResults || {});
                     setScheduleRange(data.scheduleRange || '');
+                    setLadderLines(data.ladderLines || []);
                 }
             } catch (error) {
                 console.error('Error loading schedule data:', error);
@@ -106,6 +107,7 @@ export default function ScheduleApp() {
                 assignments,
                 finalResults,
                 scheduleRange,
+                ladderLines,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
         } catch (error) {
@@ -266,11 +268,8 @@ export default function ScheduleApp() {
     useEffect(() => {
         if (!user) return;
         
-        // 로그인한 사용자가 신청한 것 또는 로그인한 사용자에게 신청된 것만 가져오기
-        const q = query(
-            collection(db, 'swapRequests'),
-            where('requesterId', '==', user.uid)
-        );
+        // 모든 근무 변경 신청 가져오기
+        const q = query(collection(db, 'swapRequests'));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const requests = snapshot.docs.map(doc => ({
