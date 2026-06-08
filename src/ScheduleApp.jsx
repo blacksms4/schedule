@@ -331,10 +331,16 @@ export default function ScheduleApp() {
 
 
     const redrawLadder = () => {
+        console.log('redrawLadder called');
         const canvas = canvasRef.current;
         const ctx = ctxRef.current;
-        if (!canvas || !ctx) return;
+        console.log('Canvas:', canvas, 'Context:', ctx);
+        if (!canvas || !ctx) {
+            console.log('Canvas or context not available');
+            return;
+        }
 
+        console.log('Players:', players, 'LadderLines:', ladderLines);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const colWidth = canvas.width / (players.length + 1);
         ctx.strokeStyle = '#94a3b8';
@@ -363,6 +369,7 @@ export default function ScheduleApp() {
         ctx.lineWidth = 3;
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
+        console.log('Month results:', monthResults);
         monthResults.forEach(result => {
             let curCol = result.start, curY = 40;
             while (curY < 260) {
@@ -388,6 +395,7 @@ export default function ScheduleApp() {
                 }
             }
         });
+        console.log('Ladder redraw completed');
     };
 
     useEffect(() => {
