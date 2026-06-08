@@ -290,17 +290,20 @@ export default function ScheduleApp() {
         if (!user) return;
         
         // 모든 근무 변경 신청 가져오기
-        const q = query(collection(db, 'swapRequests'));
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const requests = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setSwapRequests(requests);
-        });
-        
-        return () => unsubscribe();
+        const loadSwapRequests = async () => {
+            try {
+                const q = query(collection(db, 'swapRequests'));
+                const snapshot = await getDocs(q);
+                const requests = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setSwapRequests(requests);
+            } catch (error) {
+                console.error('Error loading swap requests:', error);
+            }
+        };
+        loadSwapRequests();
     }, [user]);
 
     const openSwapModal = (dateKey, worker) => {
