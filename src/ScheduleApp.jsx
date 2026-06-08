@@ -101,12 +101,6 @@ export default function ScheduleApp() {
                     setScheduleRange(data.scheduleRange || '');
                     setLadderLines(data.ladderLines || []);
                     console.log('State updated:', { players: data.players, assignments: data.assignments, ladderLines: data.ladderLines });
-                    
-                    // 사다리가 있으면 다시 그리기
-                    if (data.ladderLines && data.ladderLines.length > 0) {
-                        console.log('Redrawing ladder with', data.ladderLines.length, 'lines');
-                        setTimeout(() => redrawLadder(), 100);
-                    }
                 } else {
                     console.log('Schedule document does not exist yet');
                 }
@@ -116,6 +110,14 @@ export default function ScheduleApp() {
         };
         loadScheduleData();
     }, []);
+
+    // 상태가 변경될 때 사다리 다시 그리기
+    useEffect(() => {
+        if (ladderLines.length > 0 && players.length > 0) {
+            console.log('Auto-redrawing ladder due to state change');
+            setTimeout(() => redrawLadder(), 100);
+        }
+    }, [ladderLines, players]);
 
     const saveUserData = async () => {
         if (!isAdmin) {
