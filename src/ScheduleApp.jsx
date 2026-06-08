@@ -76,7 +76,9 @@ export default function ScheduleApp() {
 
     useEffect(() => {
         if (user && adminEmails.length > 0) {
-            setIsAdmin(adminEmails.includes(user.email));
+            const isAdminStatus = adminEmails.includes(user.email);
+            console.log('Admin check:', { userEmail: user.email, adminEmails, isAdminStatus });
+            setIsAdmin(isAdminStatus);
         }
     }, [user, adminEmails]);
 
