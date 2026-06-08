@@ -865,7 +865,7 @@ export default function ScheduleApp() {
                             </div>
                             <canvas
                                 ref={canvasRef}
-                                width={600}
+                                width={800}
                                 height={300}
                                 onClick={handleCanvasClick}
                                 className="touch-none bg-gray-50 border border-gray-200 rounded-lg cursor-pointer"
