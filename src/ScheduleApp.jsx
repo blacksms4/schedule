@@ -119,16 +119,17 @@ export default function ScheduleApp() {
         }
     }, [ladderLines, players]);
 
-    const saveUserData = async () => {
+    const saveUserData = async (customAssignments = null) => {
         if (!isAdmin) {
             console.log('saveUserData called but user is not admin');
             return;
         }
         try {
-            console.log('Saving schedule data:', { players, assignments, finalResults, scheduleRange, ladderLines });
+            const assignmentsToSave = customAssignments || assignments;
+            console.log('Saving schedule data:', { players, assignments: assignmentsToSave, finalResults, scheduleRange, ladderLines });
             await setDoc(doc(db, 'schedule', 'main'), {
                 players,
-                assignments,
+                assignments: assignmentsToSave,
                 finalResults,
                 scheduleRange,
                 ladderLines,
@@ -672,7 +673,7 @@ export default function ScheduleApp() {
         setCurrentMonth(assignMonth);
         setCurrentPlayerIndex(localPlayerIndex);
         console.log('Assigning to calendar, new assignments:', newAssignments);
-        saveUserData();
+        saveUserData(newAssignments);
 
         const countSummary = orderedPlayers.map(p => `${p}: ${workCount[p]}회`).join(', ');
         const lastDate = assignedDates.length > 0 ? assignedDates[assignedDates.length - 1] : lastAssignedDate;
