@@ -81,16 +81,21 @@ export default function ScheduleApp() {
     }, [user, adminEmails]);
 
     useEffect(() => {
-        const unsubscribe = onSnapshot(doc(db, 'schedule', 'main'), (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
-                setPlayers(data.players || []);
-                setAssignments(data.assignments || {});
-                setFinalResults(data.finalResults || {});
-                setScheduleRange(data.scheduleRange || '');
+        const loadScheduleData = async () => {
+            try {
+                const scheduleDoc = await getDoc(doc(db, 'schedule', 'main'));
+                if (scheduleDoc.exists()) {
+                    const data = scheduleDoc.data();
+                    setPlayers(data.players || []);
+                    setAssignments(data.assignments || {});
+                    setFinalResults(data.finalResults || {});
+                    setScheduleRange(data.scheduleRange || '');
+                }
+            } catch (error) {
+                console.error('Error loading schedule data:', error);
             }
-        });
-        return () => unsubscribe();
+        };
+        loadScheduleData();
     }, []);
 
     const saveUserData = async () => {
