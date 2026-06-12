@@ -523,25 +523,10 @@ export default function ScheduleApp() {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
-        // canvas 내부 좌표 계산
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-        
-        // canvas 실제 크기 기준으로 열 너비 계산
         const colWidth = canvas.width / (players.length + 1);
-        let col = 1;
-        let minDistance = Infinity;
+        let col = Math.round((clientX - rect.left) / colWidth);
         
-        for (let i = 1; i <= players.length; i++) {
-            const colCenter = i * colWidth;
-            const distance = Math.abs(x - colCenter);
-            if (distance < minDistance) {
-                minDistance = distance;
-                col = i;
-            }
-        }
-        
-        console.log('Click debug:', { clientX, clientY, x, y, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
+        console.log('Click debug:', { clientX, clientY, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
