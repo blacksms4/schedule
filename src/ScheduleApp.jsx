@@ -530,7 +530,11 @@ export default function ScheduleApp() {
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
-        if (col < 1 || col > players.length || monthResults.some(r => r.start === col)) return;
+        
+        // 관리자는 이미 선택된 열을 다시 선택할 수 없음
+        // 다른 사용자는 이미 선택된 열도 클릭하여 일시적 경로를 볼 수 있음
+        if (col < 1 || col > players.length) return;
+        if (isAdmin && monthResults.some(r => r.start === col)) return;
 
         let curCol = col, curY = 40;
         const path = [];
@@ -549,13 +553,14 @@ export default function ScheduleApp() {
             }
         }
         
-        // 관리자: 결과 저장
+        // 관리자: 실시간 경로 그리기 + 결과 저장
         if (isAdmin) {
             setFinalResults({
                 ...finalResults,
                 [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
             });
             saveUserData();
+            redrawLadder();
         } else {
             // 다른 사용자: 일시적 경로 표시
             setTempPath({ start: col, end: curCol, path });
