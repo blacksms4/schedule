@@ -389,20 +389,20 @@ export default function ScheduleApp() {
                 let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
                 if (hit) {
                     ctx.beginPath();
-                    ctx.moveTo(curCol * colWidth, curY);
-                    ctx.lineTo(curCol * colWidth, hit.y);
+                    ctx.moveTo((curCol + 1) * colWidth, curY);
+                    ctx.lineTo((curCol + 1) * colWidth, hit.y);
                     ctx.stroke();
                     curY = hit.y;
                     let nextCol = (hit.col === curCol) ? curCol + 1 : curCol - 1;
                     ctx.beginPath();
-                    ctx.moveTo(curCol * colWidth, curY);
-                    ctx.lineTo(nextCol * colWidth, curY);
+                    ctx.moveTo((curCol + 1) * colWidth, curY);
+                    ctx.lineTo((nextCol + 1) * colWidth, curY);
                     ctx.stroke();
                     curCol = nextCol;
                 } else {
                     ctx.beginPath();
-                    ctx.moveTo(curCol * colWidth, curY);
-                    ctx.lineTo(curCol * colWidth, 260);
+                    ctx.moveTo((curCol + 1) * colWidth, curY);
+                    ctx.lineTo((curCol + 1) * colWidth, 260);
                     ctx.stroke();
                     break;
                 }
@@ -415,8 +415,8 @@ export default function ScheduleApp() {
             ctx.lineWidth = 3;
             tempPath.path.forEach(segment => {
                 ctx.beginPath();
-                ctx.moveTo(segment.from.col * colWidth, segment.from.y);
-                ctx.lineTo(segment.to.col * colWidth, segment.to.y);
+                ctx.moveTo((segment.from.col + 1) * colWidth, segment.from.y);
+                ctx.lineTo((segment.to.col + 1) * colWidth, segment.to.y);
                 ctx.stroke();
             });
         }
