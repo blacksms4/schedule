@@ -527,12 +527,6 @@ export default function ScheduleApp() {
         const x = clientX - rect.left;
         const y = clientY - rect.top;
         
-        // canvas 실제 크기와 표시 크기 비율 계산
-        const scaleX = canvas.width / rect.width;
-        
-        // 비율을 적용하여 canvas 실제 좌표 계산
-        const canvasX = x * scaleX;
-        
         // canvas 실제 크기 기준으로 열 너비 계산
         const colWidth = canvas.width / (players.length + 1);
         let col = 1;
@@ -540,14 +534,14 @@ export default function ScheduleApp() {
         
         for (let i = 1; i <= players.length; i++) {
             const colCenter = i * colWidth;
-            const distance = Math.abs(canvasX - colCenter);
+            const distance = Math.abs(x - colCenter);
             if (distance < minDistance) {
                 minDistance = distance;
                 col = i;
             }
         }
         
-        console.log('Click debug:', { clientX, clientY, x, y, scaleX, canvasX, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
+        console.log('Click debug:', { clientX, clientY, x, y, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
