@@ -536,13 +536,12 @@ export default function ScheduleApp() {
         const canvasY = y * scaleY;
         
         const colWidth = canvas.width / (players.length + 1);
-        const displayColWidth = rect.width / (players.length + 1);
         let col = 1;
         let minDistance = Infinity;
         
         for (let i = 1; i <= players.length; i++) {
-            const colCenter = i * displayColWidth;
-            const distance = Math.abs(x - colCenter);
+            const colCenter = i * colWidth;
+            const distance = Math.abs(canvasX - colCenter);
             if (distance < minDistance) {
                 minDistance = distance;
                 col = i;
