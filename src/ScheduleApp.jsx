@@ -49,10 +49,6 @@ export default function ScheduleApp() {
     useEffect(() => {
         if (canvasRef.current) {
             ctxRef.current = canvasRef.current.getContext('2d');
-            // canvas 크기를 표시 크기에 맞게 조정
-            const rect = canvasRef.current.getBoundingClientRect();
-            canvasRef.current.width = rect.width;
-            canvasRef.current.height = 300;
         }
     }, []);
 
@@ -531,12 +527,13 @@ export default function ScheduleApp() {
         const x = clientX - rect.left;
         const y = clientY - rect.top;
         
-        const colWidth = canvas.width / (players.length + 1);
+        // 표시 크기 기준으로 열 너비 계산
+        const displayColWidth = rect.width / (players.length + 1);
         let col = 1;
         let minDistance = Infinity;
         
         for (let i = 1; i <= players.length; i++) {
-            const colCenter = i * colWidth;
+            const colCenter = i * displayColWidth;
             const distance = Math.abs(x - colCenter);
             if (distance < minDistance) {
                 minDistance = distance;
@@ -544,7 +541,7 @@ export default function ScheduleApp() {
             }
         }
         
-        console.log('Click debug:', { clientX, clientY, x, y, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
+        console.log('Click debug:', { clientX, clientY, x, y, displayColWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
