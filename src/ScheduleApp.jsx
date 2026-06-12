@@ -523,14 +523,8 @@ export default function ScheduleApp() {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
-        // canvas 실제 크기와 표시 크기 비율 계산
-        const scaleX = canvas.width / rect.width;
-        
-        // 비율을 적용하여 canvas 실제 좌표 계산
-        const canvasX = (clientX - rect.left) * scaleX;
-        
-        const colWidth = canvas.width / (players.length + 1);
-        let col = Math.round(canvasX / colWidth);
+        const colWidth = rect.width / (players.length + 1);
+        let col = Math.round((clientX - rect.left) / colWidth);
         
         console.log('Click debug:', { clientX, clientY, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
