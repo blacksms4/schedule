@@ -537,37 +537,38 @@ export default function ScheduleApp() {
         if (isAdmin && monthResults.some(r => r.start === col)) return;
 
         let curCol = col, curY = 40;
-        const path = [];
-        
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 3;
+
         while (curY < 260) {
             let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
             if (hit) {
-                path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: hit.y } });
-                path.push({ from: { col: curCol, y: hit.y }, to: { col: (hit.col === curCol) ? curCol + 1 : curCol - 1, y: hit.y } });
+                ctx.beginPath();
+                ctx.moveTo(curCol * colWidth, curY);
+                ctx.lineTo(curCol * colWidth, hit.y);
+                ctx.stroke();
                 curY = hit.y;
                 let nextCol = (hit.col === curCol) ? curCol + 1 : curCol - 1;
+                ctx.beginPath();
+                ctx.moveTo(curCol * colWidth, curY);
+                ctx.lineTo(nextCol * colWidth, curY);
+                ctx.stroke();
                 curCol = nextCol;
             } else {
-                path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: 260 } });
+                ctx.beginPath();
+                ctx.moveTo(curCol * colWidth, curY);
+                ctx.lineTo(curCol * colWidth, 260);
+                ctx.stroke();
                 break;
             }
         }
         
-        console.log('Path calculated:', { start: col, end: curCol });
-        
-        // 관리자: 실시간 경로 그리기 + 결과 저장
-        if (isAdmin) {
-            setFinalResults({
-                ...finalResults,
-                [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
-            });
-            saveUserData();
-            redrawLadder();
-        } else {
-            // 다른 사용자: 일시적 경로 표시
-            setTempPath({ start: col, end: curCol, path });
-            redrawLadder();
-        }
+        setFinalResults({
+            ...finalResults,
+            [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
+        });
+        saveUserData();
+        redrawLadder();
     };
 
     const editAssignment = (dateKey) => {
