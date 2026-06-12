@@ -504,8 +504,15 @@ export default function ScheduleApp() {
         if (!canvas || !ctx) return;
 
         const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        // 터치 이벤트와 마우스 이벤트 모두 지원
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
         const colWidth = canvas.width / (players.length + 1);
-        let col = Math.round((e.clientX - rect.left) / colWidth);
+        let col = Math.round(((clientX - rect.left) * scaleX) / colWidth);
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
@@ -883,6 +890,7 @@ export default function ScheduleApp() {
                                     width={800}
                                     height={300}
                                     onClick={handleCanvasClick}
+                                    onTouchStart={handleCanvasClick}
                                     className="touch-none bg-gray-50 border border-gray-200 rounded-lg cursor-pointer w-full"
                                     style={{ maxWidth: '100%', height: 'auto' }}
                                 />
