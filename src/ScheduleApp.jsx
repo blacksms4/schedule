@@ -537,37 +537,42 @@ export default function ScheduleApp() {
         if (isAdmin && monthResults.some(r => r.start === col)) return;
 
         let curCol = col, curY = 40;
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 3;
-
+        const path = [];
+        
         while (curY < 260) {
             let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
             if (hit) {
-                ctx.beginPath();
-                ctx.moveTo(curCol * colWidth, curY);
-                ctx.lineTo(curCol * colWidth, hit.y);
-                ctx.stroke();
+                path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: hit.y } });
+                path.push({ from: { col: curCol, y: hit.y }, to: { col: (hit.col === curCol) ? curCol + 1 : curCol - 1, y: hit.y } });
                 curY = hit.y;
                 let nextCol = (hit.col === curCol) ? curCol + 1 : curCol - 1;
-                ctx.beginPath();
-                ctx.moveTo(curCol * colWidth, curY);
-                ctx.lineTo(nextCol * colWidth, curY);
-                ctx.stroke();
                 curCol = nextCol;
             } else {
-                ctx.beginPath();
-                ctx.moveTo(curCol * colWidth, curY);
-                ctx.lineTo(curCol * colWidth, 260);
-                ctx.stroke();
+                path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: 260 } });
                 break;
             }
         }
         
-        setFinalResults({
-            ...finalResults,
-            [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
-        });
-        saveUserData();
+        // 관리자: 빨간색 경로 그리기 + 결과 저장
+        if (isAdmin) {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 3;
+            path.forEach(segment => {
+                ctx.beginPath();
+                ctx.moveTo(segment.from.col * colWidth, segment.from.y);
+                ctx.lineTo(segment.to.col * colWidth, segment.to.y);
+                ctx.stroke();
+            });
+            setFinalResults({
+                ...finalResults,
+                [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
+            });
+            saveUserData();
+        } else {
+            // 다른 사용자: 파란색 경로 표시
+            setTempPath({ start: col, end: curCol, path });
+            redrawLadder();
+        }
     };
 
     const editAssignment = (dateKey) => {
