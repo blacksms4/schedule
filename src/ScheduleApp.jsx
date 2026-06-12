@@ -537,6 +537,8 @@ export default function ScheduleApp() {
         const colWidth = canvas.width / (players.length + 1);
         let col = Math.round(canvasX / colWidth);
         
+        console.log('Click debug:', { clientX, clientY, x, y, scaleX, scaleY, canvasX, canvasY, colWidth, col, players: players.length });
+        
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
         
@@ -561,6 +563,8 @@ export default function ScheduleApp() {
                 break;
             }
         }
+        
+        console.log('Path calculated:', { start: col, end: curCol });
         
         // 관리자: 실시간 경로 그리기 + 결과 저장
         if (isAdmin) {
