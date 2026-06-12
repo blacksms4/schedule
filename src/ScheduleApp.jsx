@@ -531,13 +531,14 @@ export default function ScheduleApp() {
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         
+        // 비율을 적용하여 canvas 실제 좌표 계산
         const canvasX = x * scaleX;
         const canvasY = y * scaleY;
         
         const colWidth = canvas.width / (players.length + 1);
-        let col = Math.round(canvasX / colWidth);
+        let col = Math.round(canvasX / colWidth) + 1;
         
-        console.log('Click debug:', { clientX, clientY, x, y, scaleX, scaleY, canvasX, canvasY, colWidth, col, players: players.length });
+        console.log('Click debug:', { clientX, clientY, x, y, scaleX, scaleY, canvasX, canvasY, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
