@@ -568,7 +568,6 @@ export default function ScheduleApp() {
             [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
         });
         saveUserData();
-        redrawLadder();
     };
 
     const editAssignment = (dateKey) => {
