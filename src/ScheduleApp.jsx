@@ -49,6 +49,10 @@ export default function ScheduleApp() {
     useEffect(() => {
         if (canvasRef.current) {
             ctxRef.current = canvasRef.current.getContext('2d');
+            // canvas 크기를 표시 크기에 맞게 조정
+            const rect = canvasRef.current.getBoundingClientRect();
+            canvasRef.current.width = rect.width;
+            canvasRef.current.height = 300;
         }
     }, []);
 
