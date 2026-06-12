@@ -363,7 +363,8 @@ export default function ScheduleApp() {
             ctx.moveTo(x, 40);
             ctx.lineTo(x, 260);
             ctx.stroke();
-            ctx.fillStyle = '#1e293b';
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(p, x, 30);
         });
@@ -475,7 +476,8 @@ export default function ScheduleApp() {
             ctx.moveTo(x, 40);
             ctx.lineTo(x, 260);
             ctx.stroke();
-            ctx.fillStyle = '#1e293b';
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(p, x, 30);
         });
@@ -535,11 +537,15 @@ export default function ScheduleApp() {
                 break;
             }
         }
-        setFinalResults({
-            ...finalResults,
-            [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
-        });
-        saveUserData();
+        
+        // 관리자만 결과 저장
+        if (isAdmin) {
+            setFinalResults({
+                ...finalResults,
+                [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
+            });
+            saveUserData();
+        }
     };
 
     const editAssignment = (dateKey) => {
