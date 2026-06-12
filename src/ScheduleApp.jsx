@@ -530,7 +530,7 @@ export default function ScheduleApp() {
         const canvasX = (clientX - rect.left) * scaleX;
         
         const colWidth = canvas.width / (players.length + 1);
-        let col = Math.round(canvasX / colWidth);
+        let col = Math.floor(canvasX / colWidth) + 1;
         
         console.log('Click debug:', { clientX, clientY, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
