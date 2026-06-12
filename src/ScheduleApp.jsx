@@ -518,15 +518,24 @@ export default function ScheduleApp() {
         if (!canvas || !ctx) return;
 
         const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
         
         // 터치 이벤트와 마우스 이벤트 모두 지원
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
+        // canvas 내부 좌표 계산
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        
+        // canvas 실제 크기와 표시 크기 비율 계산
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const canvasX = x * scaleX;
+        const canvasY = y * scaleY;
+        
         const colWidth = canvas.width / (players.length + 1);
-        let col = Math.round(((clientX - rect.left) * scaleX) / colWidth);
+        let col = Math.round(canvasX / colWidth);
         
         const monthKey = `${currentYear}-${(assignMonth + 1).toString().padStart(2, '0')}`;
         const monthResults = finalResults[monthKey] || [];
