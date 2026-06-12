@@ -540,12 +540,12 @@ export default function ScheduleApp() {
         const path = [];
         
         while (curY < 260) {
-            let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
+            let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol + 1 || l.col === curCol)).sort((a, b) => a.y - b.y)[0];
             if (hit) {
                 path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: hit.y } });
-                path.push({ from: { col: curCol, y: hit.y }, to: { col: (hit.col === curCol) ? curCol + 1 : curCol - 1, y: hit.y } });
+                path.push({ from: { col: curCol, y: hit.y }, to: { col: (hit.col === curCol + 1) ? curCol + 1 : curCol - 1, y: hit.y } });
                 curY = hit.y;
-                let nextCol = (hit.col === curCol) ? curCol + 1 : curCol - 1;
+                let nextCol = (hit.col === curCol + 1) ? curCol + 1 : curCol - 1;
                 curCol = nextCol;
             } else {
                 path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: 260 } });
