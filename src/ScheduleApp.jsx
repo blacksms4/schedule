@@ -856,9 +856,9 @@ export default function ScheduleApp() {
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1">
-                            <div className="flex gap-2 mb-4">
+                            <div className="flex flex-col md:flex-row gap-2 mb-4">
                                 <button onClick={drawLadder} className="bg-indigo-600 text-white px-4 py-2 rounded font-bold flex-1">사다리 생성</button>
                                 <select
                                     className="border p-2 rounded"
@@ -871,15 +871,18 @@ export default function ScheduleApp() {
                                 </select>
                                 <button onClick={assignToCalendar} className="bg-green-600 text-white px-4 py-2 rounded font-bold flex-1">선택 월 근무표 반영</button>
                             </div>
-                            <canvas
-                                ref={canvasRef}
-                                width={800}
-                                height={300}
-                                onClick={handleCanvasClick}
-                                className="touch-none bg-gray-50 border border-gray-200 rounded-lg cursor-pointer"
-                            />
+                            <div className="w-full overflow-x-auto">
+                                <canvas
+                                    ref={canvasRef}
+                                    width={800}
+                                    height={300}
+                                    onClick={handleCanvasClick}
+                                    className="touch-none bg-gray-50 border border-gray-200 rounded-lg cursor-pointer w-full"
+                                    style={{ maxWidth: '100%', height: 'auto' }}
+                                />
+                            </div>
                         </div>
-                        <div className="w-64 p-4 bg-yellow-50 border rounded-lg">
+                        <div className="w-full md:w-64 p-4 bg-yellow-50 border rounded-lg">
                             <h3 className="font-bold border-b pb-2 mb-2">최종 결과 공지 ({currentYear}년 {assignMonth + 1}월)</h3>
                             <div className="text-sm space-y-1">
                                 {(() => {
