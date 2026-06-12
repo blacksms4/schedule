@@ -49,6 +49,10 @@ export default function ScheduleApp() {
     useEffect(() => {
         if (canvasRef.current) {
             ctxRef.current = canvasRef.current.getContext('2d');
+            // canvas 크기를 표시 크기에 맞게 조정
+            const rect = canvasRef.current.getBoundingClientRect();
+            canvasRef.current.width = rect.width;
+            canvasRef.current.height = 300;
         }
     }, []);
 
@@ -523,7 +527,7 @@ export default function ScheduleApp() {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
-        const colWidth = rect.width / (players.length + 1);
+        const colWidth = canvas.width / (players.length + 1);
         let col = Math.round((clientX - rect.left) / colWidth);
         
         console.log('Click debug:', { clientX, clientY, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
