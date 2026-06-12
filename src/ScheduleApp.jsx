@@ -38,6 +38,7 @@ export default function ScheduleApp() {
     const [selectedWorker, setSelectedWorker] = useState(null);
     const [targetDate, setTargetDate] = useState('');
     const [targetWorker, setTargetWorker] = useState('');
+    const [tempPath, setTempPath] = useState(null);
     const [showAdminModal, setShowAdminModal] = useState(false);
     const [adminEmailInput, setAdminEmailInput] = useState('');
     const [scheduleRange, setScheduleRange] = useState('');
@@ -407,6 +408,19 @@ export default function ScheduleApp() {
                 }
             }
         });
+
+        // 일시적 경로 그리기 (다른 사용자용)
+        if (tempPath && tempPath.path) {
+            ctx.strokeStyle = 'blue';
+            ctx.lineWidth = 3;
+            tempPath.path.forEach(segment => {
+                ctx.beginPath();
+                ctx.moveTo(segment.from.col * colWidth, segment.from.y);
+                ctx.lineTo(segment.to.col * colWidth, segment.to.y);
+                ctx.stroke();
+            });
+        }
+
         console.log('Ladder redraw completed');
     };
 
@@ -519,39 +533,33 @@ export default function ScheduleApp() {
         if (col < 1 || col > players.length || monthResults.some(r => r.start === col)) return;
 
         let curCol = col, curY = 40;
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 3;
-
+        const path = [];
+        
         while (curY < 260) {
             let hit = ladderLines.filter(l => l.y > curY && (l.col === curCol || l.col === curCol - 1)).sort((a, b) => a.y - b.y)[0];
             if (hit) {
-                ctx.beginPath();
-                ctx.moveTo(curCol * colWidth, curY);
-                ctx.lineTo(curCol * colWidth, hit.y);
-                ctx.stroke();
+                path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: hit.y } });
+                path.push({ from: { col: curCol, y: hit.y }, to: { col: (hit.col === curCol) ? curCol + 1 : curCol - 1, y: hit.y } });
                 curY = hit.y;
                 let nextCol = (hit.col === curCol) ? curCol + 1 : curCol - 1;
-                ctx.beginPath();
-                ctx.moveTo(curCol * colWidth, curY);
-                ctx.lineTo(nextCol * colWidth, curY);
-                ctx.stroke();
                 curCol = nextCol;
             } else {
-                ctx.beginPath();
-                ctx.moveTo(curCol * colWidth, curY);
-                ctx.lineTo(curCol * colWidth, 260);
-                ctx.stroke();
+                path.push({ from: { col: curCol, y: curY }, to: { col: curCol, y: 260 } });
                 break;
             }
         }
         
-        // 관리자만 결과 저장
+        // 관리자: 결과 저장
         if (isAdmin) {
             setFinalResults({
                 ...finalResults,
                 [monthKey]: [...(finalResults[monthKey] || []), { start: col, end: curCol }]
             });
             saveUserData();
+        } else {
+            // 다른 사용자: 일시적 경로 표시
+            setTempPath({ start: col, end: curCol, path });
+            redrawLadder();
         }
     };
 
