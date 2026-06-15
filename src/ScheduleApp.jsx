@@ -523,8 +523,21 @@ export default function ScheduleApp() {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
+        // 모바일 디바이스 감지
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        
         const colWidth = canvas.width / (players.length + 1);
-        let col = Math.round((clientX - rect.left) / colWidth);
+        let col;
+        
+        if (isMobile) {
+            // 모바일에서는 비율 계산 적용
+            const scaleX = canvas.width / rect.width;
+            const canvasX = (clientX - rect.left) * scaleX;
+            col = Math.round(canvasX / colWidth);
+        } else {
+            // 데스크톱에서는 기존 방식 사용
+            col = Math.round((clientX - rect.left) / colWidth);
+        }
         
         console.log('Click debug:', { clientX, clientY, colWidth, col, players: players.length, rectWidth: rect.width, canvasWidth: canvas.width });
         
