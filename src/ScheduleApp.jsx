@@ -912,6 +912,7 @@ export default function ScheduleApp() {
                                     onClick={handleCanvasClick}
                                     onTouchStart={handleCanvasClick}
                                     className="touch-none bg-gray-50 border border-gray-200 rounded-lg cursor-pointer"
+                                    style={{ width: '100%', height: 'auto' }}
                                 />
                             </div>
                         </div>
